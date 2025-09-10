@@ -1,261 +1,208 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
-        }
-        
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-        }
-        
-        .calculator {
-            background-color: #22252D;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-            width: 300px;
-            overflow: hidden;
-        }
-        
-        .display {
-            background-color: #22252D;
-            color: white;
-            text-align: right;
-            padding: 20px;
-            font-size: 2rem;
-            min-height: 80px;
-            word-wrap: break-word;
-            word-break: break-all;
-        }
-        
-        .buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-gap: 1px;
-            background-color: #292D36;
-            padding: 10px;
-        }
-        
-        button {
-            border: none;
-            padding: 20px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            outline: none;
-            background-color: #2D3036;
-            color: white;
-            transition: background-color 0.2s;
-        }
-        
-        button:hover {
-            background-color: #3B4048;
-        }
-        
-        .operator {
-            background-color: #4B5EFC;
-            color: white;
-        }
-        
-        .operator:hover {
-            background-color: #6376ff;
-        }
-        
-        .equals {
-            background-color: #4B5EFC;
-            color: white;
-        }
-        
-        .equals:hover {
-            background-color: #6376ff;
-        }
-        
-        .clear, .backspace {
-            background-color: #ff7979;
-            color: white;
-        }
-        
-        .clear:hover, .backspace:hover {
-            background-color: #ff9393;
-        }
-        
-        .zero {
-            grid-column: span 2;
-        }
-    </style>
-</head>
-<body>
-    <div class="calculator">
-        <div class="display">0</div>
-        <div class="buttons">
-            <button class="clear">C</button>
-            <button class="backspace">⌫</button>
-            <button class="operator">%</button>
-            <button class="operator">÷</button>
-            
-            <button class="number">7</button>
-            <button class="number">8</button>
-            <button class="number">9</button>
-            <button class="operator">×</button>
-            
-            <button class="number">4</button>
-            <button class="number">5</button>
-            <button class="number">6</button>
-            <button class="operator">-</button>
-            
-            <button class="number">1</button>
-            <button class="number">2</button>
-            <button class="number">3</button>
-            <button class="operator">+</button>
-            
-            <button class="number zero">0</button>
-            <button class="number">.</button>
-            <button class="equals">=</button>
-        </div>
-    </div>
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from "/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "/components/ui/card";
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const display = document.querySelector('.display');
-            const buttons = document.querySelectorAll('button');
-            let currentInput = '0';
-            let previousInput = '';
-            let operation = null;
-            let shouldResetDisplay = false;
-            
-            // Update the display
-            function updateDisplay() {
-                display.textContent = currentInput;
-            }
-            
-            // Reset the calculator
-            function resetCalculator() {
-                currentInput = '0';
-                previousInput = '';
-                operation = null;
-                shouldResetDisplay = false;
-                updateDisplay();
-            }
-            
-            // Append number to current input
-            function appendNumber(number) {
-                if (currentInput === '0' || shouldResetDisplay) {
-                    currentInput = number;
-                    shouldResetDisplay = false;
-                } else {
-                    currentInput += number;
-                }
-                updateDisplay();
-            }
-            
-            // Choose operation
-            function chooseOperation(op) {
-                if (currentInput === '0') return;
-                
-                if (previousInput !== '') {
-                    calculate();
-                }
-                
-                operation = op;
-                previousInput = currentInput;
-                shouldResetDisplay = true;
-            }
-            
-            // Calculate result
-            function calculate() {
-                let computation;
-                const prev = parseFloat(previousInput);
-                const current = parseFloat(currentInput);
-                
-                if (isNaN(prev) || isNaN(current)) return;
-                
-                switch (operation) {
-                    case '+':
-                        computation = prev + current;
-                        break;
-                    case '-':
-                        computation = prev - current;
-                        break;
-                    case '×':
-                        computation = prev * current;
-                        break;
-                    case '÷':
-                        if (current === 0) {
-                            alert("Cannot divide by zero");
-                            resetCalculator();
-                            return;
-                        }
-                        computation = prev / current;
-                        break;
-                    case '%':
-                        computation = prev % current;
-                        break;
-                    default:
-                        return;
-                }
-                
-                currentInput = computation.toString();
-                operation = null;
-                previousInput = '';
-                shouldResetDisplay = true;
-                updateDisplay();
-            }
-            
-            // Add decimal point
-            function addDecimal() {
-                if (shouldResetDisplay) {
-                    currentInput = '0.';
-                    shouldResetDisplay = false;
-                } else if (!currentInput.includes('.')) {
-                    currentInput += '.';
-                }
-                updateDisplay();
-            }
-            
-            // Backspace function
-            function backspace() {
-                if (currentInput.length === 1) {
-                    currentInput = '0';
-                } else {
-                    currentInput = currentInput.slice(0, -1);
-                }
-                updateDisplay();
-            }
-            
-            // Add event listeners to buttons
-            buttons.forEach(button => {
-                button.addEventListener('click', () => {
-                    if (button.classList.contains('number')) {
-                        if (button.textContent === '.') {
-                            addDecimal();
-                        } else {
-                            appendNumber(button.textContent);
-                        }
-                    } else if (button.classList.contains('operator')) {
-                        chooseOperation(button.textContent);
-                    } else if (button.classList.contains('equals')) {
-                        calculate();
-                    } else if (button.classList.contains('clear')) {
-                        resetCalculator();
-                    } else if (button.classList.contains('backspace')) {
-                        backspace();
-                    }
-                });
-            });
-            
-            // Initialize display
-            updateDisplay();
-        });
-    </script>
-</body>
-</html>
+const TicTacToeGame = () => {
+  const [board, setBoard] = useState<(string | null)[]>(Array(9).fill(null));
+  const [isXNext, setIsXNext] = useState<boolean>(true);
+  const [winner, setWinner] = useState<string | null>(null);
+  const [isDraw, setIsDraw] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [showTouchControls, setShowTouchControls] = useState<boolean>(false);
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth < 768;
+      setIsMobile(hasTouch || isSmallScreen);
+      setShowTouchControls(hasTouch || isSmallScreen);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  // Keyboard controls for desktop
+  useEffect(() => {
+    if (!isMobile && !winner && !isDraw) {
+      const handleKeyPress = (e: KeyboardEvent) => {
+        const key = e.key;
+        if (key >= '1' && key <= '9') {
+          const position = parseInt(key) - 1;
+          if (board[position] === null) {
+            handleMove(position);
+          }
+        } else if (key === 'r' || key === 'R') {
+          resetGame();
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyPress);
+      return () => window.removeEventListener('keydown', handleKeyPress);
+    }
+  }, [board, isMobile, winner, isDraw]);
+
+  // Check for winner
+  const calculateWinner = useCallback((squares: (string | null)[]) => {
+    const lines = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+      [0, 4, 8], [2, 4, 6]             // diagonals
+    ];
+
+    for (const [a, b, c] of lines) {
+      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+        return squares[a];
+      }
+    }
+
+    return null;
+  }, []);
+
+  // Check for draw
+  const checkDraw = useCallback((squares: (string | null)[]) => {
+    return squares.every(square => square !== null) && !calculateWinner(squares);
+  }, [calculateWinner]);
+
+  // Handle square click
+  const handleMove = (position: number) => {
+    if (winner || isDraw || board[position]) return;
+
+    const newBoard = [...board];
+    newBoard[position] = isXNext ? 'X' : 'O';
+    
+    setBoard(newBoard);
+    setIsXNext(!isXNext);
+    
+    const newWinner = calculateWinner(newBoard);
+    if (newWinner) {
+      setWinner(newWinner);
+    } else if (checkDraw(newBoard)) {
+      setIsDraw(true);
+    }
+  };
+
+  // Reset game
+  const resetGame = () => {
+    setBoard(Array(9).fill(null));
+    setIsXNext(true);
+    setWinner(null);
+    setIsDraw(false);
+  };
+
+  // Render individual square
+  const renderSquare = (position: number) => {
+    return (
+      <button
+        onClick={() => handleMove(position)}
+        disabled={!!winner || !!board[position] || isDraw}
+        className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center text-3xl md:text-4xl font-bold 
+                  border-2 border-gray-300 rounded-lg transition-all duration-200
+                  ${!board[position] && !winner && !isDraw ? 'hover:bg-gray-100 active:bg-gray-200' : ''}
+                  ${board[position] === 'X' ? 'text-blue-600' : ''}
+                  ${board[position] === 'O' ? 'text-red-600' : ''}
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
+        aria-label={`Square ${position + 1}${board[position] ? ` with ${board[position]}` : ''}`}
+      >
+        {board[position]}
+      </button>
+    );
+  };
+
+  // Get game status text
+  const getStatus = () => {
+    if (winner) {
+      return `Winner: ${winner}`;
+    } else if (isDraw) {
+      return "It's a draw!";
+    } else {
+      return `Next player: ${isXNext ? 'X' : 'O'}`;
+    }
+  };
+
+  // Virtual keyboard for mobile
+  const renderVirtualKeyboard = () => {
+    if (!showTouchControls || winner || isDraw) return null;
+
+    return (
+      <div className="mt-6 p-4 bg-gray-100 rounded-lg">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Tap to move:</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+            <Button
+              key={num}
+              onClick={() => handleMove(num - 1)}
+              disabled={!!board[num - 1]}
+              variant="outline"
+              className="h-12 text-lg font-mono"
+            >
+              {num}
+            </Button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Keyboard instructions for desktop
+  const renderKeyboardInstructions = () => {
+    if (isMobile || winner || isDraw) return null;
+
+    return (
+      <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+        <p>Keyboard controls: Press 1-9 to place your move, R to reset</p>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 flex flex-col items-center justify-center">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl md:text-3xl font-bold text-gray-800">Tic Tac Toe</CardTitle>
+          <CardDescription className="text-gray-600">
+            A classic game of X and O
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="flex flex-col items-center">
+          {/* Game status */}
+          <div className={`text-lg font-semibold mb-6 px-4 py-2 rounded-lg 
+                          ${winner ? 'bg-green-100 text-green-800' : 
+                            isDraw ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-gray-100 text-gray-800'}`}>
+            {getStatus()}
+          </div>
+
+          {/* Game board */}
+          <div className="grid grid-cols-3 gap-2 md:gap-3 bg-white p-4 rounded-xl shadow-md">
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(position => (
+              <div key={position}>
+                {renderSquare(position)}
+              </div>
+            ))}
+          </div>
+
+          {/* Controls instructions */}
+          {renderVirtualKeyboard()}
+          {renderKeyboardInstructions()}
+        </CardContent>
+
+        <CardFooter className="flex justify-center">
+          <Button 
+            onClick={resetGame} 
+            variant="default" 
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+          >
+            Reset Game
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+};
+
+export default TicTacToeGame;
