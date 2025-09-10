@@ -1,208 +1,474 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from "/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "/components/ui/card";
+import { useState } from "react";
+import { ShoppingCart, Search, Menu, User, Heart } from "lucide-react";
 
-const TicTacToeGame = () => {
-  const [board, setBoard] = useState<(string | null)[]>(Array(9).fill(null));
-  const [isXNext, setIsXNext] = useState<boolean>(true);
-  const [winner, setWinner] = useState<string | null>(null);
-  const [isDraw, setIsDraw] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [showTouchControls, setShowTouchControls] = useState<boolean>(false);
-
-  // Check if device is mobile
-  useEffect(() => {
-    const checkIsMobile = () => {
-      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      const isSmallScreen = window.innerWidth < 768;
-      setIsMobile(hasTouch || isSmallScreen);
-      setShowTouchControls(hasTouch || isSmallScreen);
-    };
-
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
-
-  // Keyboard controls for desktop
-  useEffect(() => {
-    if (!isMobile && !winner && !isDraw) {
-      const handleKeyPress = (e: KeyboardEvent) => {
-        const key = e.key;
-        if (key >= '1' && key <= '9') {
-          const position = parseInt(key) - 1;
-          if (board[position] === null) {
-            handleMove(position);
-          }
-        } else if (key === 'r' || key === 'R') {
-          resetGame();
-        }
-      };
-
-      window.addEventListener('keydown', handleKeyPress);
-      return () => window.removeEventListener('keydown', handleKeyPress);
+const TPSStore = () => {
+  const [cartItems, setCartItems] = useState([]);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Mock product data
+  const categories = [
+    { id: "all", name: "All Products" },
+    { id: "electronics", name: "Electronics" },
+    { id: "clothing", name: "Clothing" },
+    { id: "home", name: "Home & Kitchen" },
+    { id: "sports", name: "Sports & Outdoors" },
+  ];
+  
+  const products = [
+    {
+      id: 1,
+      name: "Wireless Headphones",
+      price: 89.99,
+      category: "electronics",
+      description: "Premium noise-cancelling wireless headphones with 30-hour battery life"
+    },
+    {
+      id: 2,
+      name: "Smart Watch",
+      price: 199.99,
+      category: "electronics",
+      description: "Advanced smartwatch with fitness tracking and notifications"
+    },
+    {
+      id: 3,
+      name: "Cotton T-Shirt",
+      price: 24.99,
+      category: "clothing",
+      description: "100% cotton t-shirt available in multiple colors"
+    },
+    {
+      id: 4,
+      name: "Running Shoes",
+      price: 79.99,
+      category: "sports",
+      description: "Lightweight running shoes with cushion technology"
+    },
+    {
+      id: 5,
+      name: "Coffee Maker",
+      price: 49.99,
+      category: "home",
+      description: "Programmable coffee maker with thermal carafe"
+    },
+    {
+      id: 6,
+      name: "Yoga Mat",
+      price: 34.99,
+      category: "sports",
+      description: "Eco-friendly yoga mat with non-slip surface"
+    },
+    {
+      id: 7,
+      name: "Bluetooth Speaker",
+      price: 59.99,
+      category: "electronics",
+      description: "Portable waterproof Bluetooth speaker with rich sound"
+    },
+    {
+      id: 8,
+      name: "Desk Lamp",
+      price: 39.99,
+      category: "home",
+      description: "LED desk lamp with adjustable brightness and color temperature"
     }
-  }, [board, isMobile, winner, isDraw]);
+  ];
 
-  // Check for winner
-  const calculateWinner = useCallback((squares: (string | null)[]) => {
-    const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-      [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-      [0, 4, 8], [2, 4, 6]             // diagonals
-    ];
+  const filteredProducts = products.filter(product => {
+    const matchesCategory = activeCategory === "all" || product.category === activeCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
-    for (const [a, b, c] of lines) {
-      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-        return squares[a];
-      }
-    }
-
-    return null;
-  }, []);
-
-  // Check for draw
-  const checkDraw = useCallback((squares: (string | null)[]) => {
-    return squares.every(square => square !== null) && !calculateWinner(squares);
-  }, [calculateWinner]);
-
-  // Handle square click
-  const handleMove = (position: number) => {
-    if (winner || isDraw || board[position]) return;
-
-    const newBoard = [...board];
-    newBoard[position] = isXNext ? 'X' : 'O';
-    
-    setBoard(newBoard);
-    setIsXNext(!isXNext);
-    
-    const newWinner = calculateWinner(newBoard);
-    if (newWinner) {
-      setWinner(newWinner);
-    } else if (checkDraw(newBoard)) {
-      setIsDraw(true);
-    }
-  };
-
-  // Reset game
-  const resetGame = () => {
-    setBoard(Array(9).fill(null));
-    setIsXNext(true);
-    setWinner(null);
-    setIsDraw(false);
-  };
-
-  // Render individual square
-  const renderSquare = (position: number) => {
-    return (
-      <button
-        onClick={() => handleMove(position)}
-        disabled={!!winner || !!board[position] || isDraw}
-        className={`w-16 h-16 md:w-20 md:h-20 flex items-center justify-center text-3xl md:text-4xl font-bold 
-                  border-2 border-gray-300 rounded-lg transition-all duration-200
-                  ${!board[position] && !winner && !isDraw ? 'hover:bg-gray-100 active:bg-gray-200' : ''}
-                  ${board[position] === 'X' ? 'text-blue-600' : ''}
-                  ${board[position] === 'O' ? 'text-red-600' : ''}
-                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
-        aria-label={`Square ${position + 1}${board[position] ? ` with ${board[position]}` : ''}`}
-      >
-        {board[position]}
-      </button>
-    );
-  };
-
-  // Get game status text
-  const getStatus = () => {
-    if (winner) {
-      return `Winner: ${winner}`;
-    } else if (isDraw) {
-      return "It's a draw!";
-    } else {
-      return `Next player: ${isXNext ? 'X' : 'O'}`;
-    }
-  };
-
-  // Virtual keyboard for mobile
-  const renderVirtualKeyboard = () => {
-    if (!showTouchControls || winner || isDraw) return null;
-
-    return (
-      <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Tap to move:</h3>
-        <div className="grid grid-cols-3 gap-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-            <Button
-              key={num}
-              onClick={() => handleMove(num - 1)}
-              disabled={!!board[num - 1]}
-              variant="outline"
-              className="h-12 text-lg font-mono"
-            >
-              {num}
-            </Button>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  // Keyboard instructions for desktop
-  const renderKeyboardInstructions = () => {
-    if (isMobile || winner || isDraw) return null;
-
-    return (
-      <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-        <p>Keyboard controls: Press 1-9 to place your move, R to reset</p>
-      </div>
-    );
+  const addToCart = (product) => {
+    setCartItems(prev => [...prev, product]);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 flex flex-col items-center justify-center">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl md:text-3xl font-bold text-gray-800">Tic Tac Toe</CardTitle>
-          <CardDescription className="text-gray-600">
-            A classic game of X and O
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="flex flex-col items-center">
-          {/* Game status */}
-          <div className={`text-lg font-semibold mb-6 px-4 py-2 rounded-lg 
-                          ${winner ? 'bg-green-100 text-green-800' : 
-                            isDraw ? 'bg-yellow-100 text-yellow-800' : 
-                            'bg-gray-100 text-gray-800'}`}>
-            {getStatus()}
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-md sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center space-x-2">
+              <div className="bg-blue-600 text-white font-bold text-xl p-2 rounded">TPS</div>
+              <span className="text-xl font-bold text-gray-800">Store</span>
+            </div>
 
-          {/* Game board */}
-          <div className="grid grid-cols-3 gap-2 md:gap-3 bg-white p-4 rounded-xl shadow-md">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(position => (
-              <div key={position}>
-                {renderSquare(position)}
+            {/* Search Bar */}
+            <div className="hidden md:flex flex-1 mx-10">
+              <div className="relative w-full max-w-md">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
-            ))}
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex items-center space-x-6">
+              <button className="hidden md:block text-gray-600 hover:text-blue-600">
+                <User className="h-6 w-6" />
+              </button>
+              <button className="text-gray-600 hover:text-blue-600">
+                <Heart className="h-6 w-6" />
+              </button>
+              <button className="relative text-gray-600 hover:text-blue-600">
+                <ShoppingCart className="h-6 w-6" />
+                {cartItems.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartItems.length}
+                  </span>
+                )}
+              </button>
+              <button className="md:hidden text-gray-600">
+                <Menu className="h-6 w-6" />
+              </button>
+            </nav>
           </div>
 
-          {/* Controls instructions */}
-          {renderVirtualKeyboard()}
-          {renderKeyboardInstructions()}
-        </CardContent>
+          {/* Mobile Search */}
+          <div className="mt-4 md:hidden">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
+          </div>
+        </div>
 
-        <CardFooter className="flex justify-center">
-          <Button 
-            onClick={resetGame} 
-            variant="default" 
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
-          >
-            Reset Game
-          </Button>
-        </CardFooter>
-      </Card>
+        {/* Categories */}
+        <div className="border-t border-gray-200">
+          <div className="container mx-auto px-4">
+            <div className="flex space-x-6 overflow-x-auto py-4">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium ${
+                    activeCategory === category.id
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <section className="mb-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-white">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl font-bold mb-4">Welcome to TPS Store</h1>
+            <p className="text-xl mb-6">Discover amazing products at unbeatable prices</p>
+            <button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+              Shop Now
+            </button>
+          </div>
+        </section>
+
+        {/* Products Grid */}
+        <section>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-gray-800">
+              {activeCategory === "all" ? "All Products" : 
+               categories.find(c => c.id === activeCategory)?.name}
+            </h2>
+            <div className="text-sm text-gray-600">
+              {filteredProducts.length} products
+            </div>
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No products found. Try a different search or category.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {/* Product Card 1 */}
+              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img 
+                    src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/18ab7660-2eeb-4f8f-9028-d5827dd300ad.png" 
+                    alt="Black wireless headphones with modern design and comfortable ear cushions"
+                    className="w-full h-48 object-cover"
+                  />
+                  <button className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
+                    <Heart className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">Wireless Headphones</h3>
+                  <p className="text-gray-600 text-sm mb-3">Premium noise-cancelling wireless headphones with 30-hour battery life</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">$89.99</span>
+                    <button 
+                      onClick={() => addToCart(products[0])}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Card 2 */}
+              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img 
+                    src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/82b0df41-bc90-4c11-b4e3-95fda54ad35d.png" 
+                    alt="Sleek smartwatch with black strap and high-resolution display showing fitness metrics"
+                    className="w-full h-48 object-cover"
+                  />
+                  <button className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
+                    <Heart className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">Smart Watch</h3>
+                  <p className="text-gray-600 text-sm mb-3">Advanced smartwatch with fitness tracking and notifications</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">$199.99</span>
+                    <button 
+                      onClick={() => addToCart(products[1])}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Card 3 */}
+              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img 
+                    src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/27ed69dc-bf66-4deb-88d9-7dba6ed54e8c.png" 
+                    alt="Classic cotton t-shirt in heather gray color on a clean white background"
+                    className="w-full h-48 object-cover"
+                  />
+                  <button className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
+                    <Heart className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">Cotton T-Shirt</h3>
+                  <p className="text-gray-600 text-sm mb-3">100% cotton t-shirt available in multiple colors</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">$24.99</span>
+                    <button 
+                      onClick={() => addToCart(products[2])}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Card 4 */}
+              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img 
+                    src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/09a69203-8987-4be5-9311-4f90c30d632c.png" 
+                    alt="Modern running shoes in blue and white colorway with detailed sole pattern"
+                    className="w-full h-48 object-cover"
+                  />
+                  <button className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
+                    <Heart className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">Running Shoes</h3>
+                  <p className="text-gray-600 text-sm mb-3">Lightweight running shoes with cushion technology</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">$79.99</span>
+                    <button 
+                      onClick={() => addToCart(products[3])}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Card 5 */}
+              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img 
+                    src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/b99e691d-56da-46f8-b0ea-31cd10b637dd.png" 
+                    alt="Stainless steel coffee maker with glass carafe and digital display"
+                    className="w-full h-48 object-cover"
+                  />
+                  <button className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
+                    <Heart className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">Coffee Maker</h3>
+                  <p className="text-gray-600 text-sm mb-3">Programmable coffee maker with thermal carafe</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">$49.99</span>
+                    <button 
+                      onClick={() => addToCart(products[4])}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Card 6 */}
+              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img 
+                    src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/c2cbe556-2d7a-4407-8492-8f1265b1abc3.png" 
+                    alt="Purple yoga mat with textured surface and rolled display"
+                    className="w-full h-48 object-cover"
+                  />
+                  <button className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
+                    <Heart className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">Yoga Mat</h3>
+                  <p className="text-gray-600 text-sm mb-3">Eco-friendly yoga mat with non-slip surface</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">$34.99</span>
+                    <button 
+                      onClick={() => addToCart(products[5])}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Card 7 */}
+              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img 
+                    src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/35ea822c-c1ab-40f5-9f90-eca328488b7c.png" 
+                    alt="Compact Bluetooth speaker in black with mesh grille and modern design"
+                    className="w-full h-48 object-cover"
+                  />
+                  <button className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
+                    <Heart className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">Bluetooth Speaker</h3>
+                  <p className="text-gray-600 text-sm mb-3">Portable waterproof Bluetooth speaker with rich sound</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">$59.99</span>
+                    <button 
+                      onClick={() => addToCart(products[6])}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Card 8 */}
+              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="relative">
+                  <img 
+                    src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/4d4b35c6-4248-47e1-b6bd-658d7b731ce9.png" 
+                    alt="Modern LED desk lamp with adjustable arm and minimalist design"
+                    className="w-full h-48 object-cover"
+                  />
+                  <button className="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100">
+                    <Heart className="h-5 w-5 text-gray-600" />
+                  </button>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">Desk Lamp</h3>
+                  <p className="text-gray-600 text-sm mb-3">LED desk lamp with adjustable brightness and color temperature</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-blue-600">$39.99</span>
+                    <button 
+                      onClick={() => addToCart(products[7])}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">TPS Store</h3>
+              <p className="text-gray-400">Your one-stop shop for all your needs. Quality products at affordable prices.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Categories</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Electronics</li>
+                <li>Clothing</li>
+                <li>Home & Kitchen</li>
+                <li>Sports & Outdoors</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Customer Service</h3>
+              <ul className="space-y-2 text-gray-400">
+                <li>Contact Us</li>
+                <li>Shipping Information</li>
+                <li>Returns & Exchanges</li>
+                <li>FAQ</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Newsletter</h3>
+              <p className="text-gray-400 mb-4">Subscribe for updates and offers</p>
+              <div className="flex">
+                <input 
+                  type="email" 
+                  placeholder="Your email" 
+                  className="px-4 py-2 bg-gray-700 rounded-l-lg focus:outline-none"
+                />
+                <button className="bg-blue-600 px-4 py-2 rounded-r-lg hover:bg-blue-700">
+                  Subscribe
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+            <p>© 2024 TPS Store. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
 
-export default TicTacToeGame;
+export default TPSStore;
